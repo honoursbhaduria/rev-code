@@ -26,10 +26,7 @@ export class ProjectsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Request() req: RequestWithUser,
-    @Body() dto: CreateProjectDto,
-  ) {
+  async create(@Request() req: RequestWithUser, @Body() dto: CreateProjectDto) {
     return this.projectsService.create(req.user.id, dto);
   }
 

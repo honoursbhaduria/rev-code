@@ -29,10 +29,7 @@ export class ReviewsController {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Request() req: RequestWithUser,
-    @Body() dto: CreateReviewDto,
-  ) {
+  async create(@Request() req: RequestWithUser, @Body() dto: CreateReviewDto) {
     return this.reviewsService.createReview(req.user.id, dto);
   }
 

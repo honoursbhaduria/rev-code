@@ -13,17 +13,62 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 const TEXT_EXTENSIONS = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-  '.py', '.rb', '.go', '.rs', '.java', '.kt', '.swift', '.cs',
-  '.c', '.cpp', '.h', '.hpp', '.cc',
-  '.html', '.htm', '.xml', '.svg',
-  '.css', '.scss', '.sass', '.less',
-  '.json', '.yaml', '.yml', '.toml', '.ini', '.env', '.cfg', '.conf',
-  '.md', '.mdx', '.txt', '.rst', '.adoc',
-  '.sh', '.bash', '.zsh', '.fish', '.ps1',
-  '.sql', '.graphql', '.gql',
-  '.php', '.lua', '.r', '.dart', '.ex', '.exs',
-  '.vue', '.svelte',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.py',
+  '.rb',
+  '.go',
+  '.rs',
+  '.java',
+  '.kt',
+  '.swift',
+  '.cs',
+  '.c',
+  '.cpp',
+  '.h',
+  '.hpp',
+  '.cc',
+  '.html',
+  '.htm',
+  '.xml',
+  '.svg',
+  '.css',
+  '.scss',
+  '.sass',
+  '.less',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.ini',
+  '.env',
+  '.cfg',
+  '.conf',
+  '.md',
+  '.mdx',
+  '.txt',
+  '.rst',
+  '.adoc',
+  '.sh',
+  '.bash',
+  '.zsh',
+  '.fish',
+  '.ps1',
+  '.sql',
+  '.graphql',
+  '.gql',
+  '.php',
+  '.lua',
+  '.r',
+  '.dart',
+  '.ex',
+  '.exs',
+  '.vue',
+  '.svelte',
 ]);
 
 const IGNORED_PATH_SEGMENTS = new Set([
@@ -101,7 +146,7 @@ function guessMimeType(filePath: string): string {
   return mimeMap[ext] || 'application/octet-stream';
 }
 
-interface FileTreeNode {
+export interface FileTreeNode {
   id: string;
   name: string;
   path: string;
@@ -151,7 +196,11 @@ export class FilesService {
 
   // ─── ZIP Upload (with security scanning) ──────────────────────────────────
 
-  async uploadZip(projectId: string, file: Express.Multer.File, userId: string) {
+  async uploadZip(
+    projectId: string,
+    file: Express.Multer.File,
+    userId: string,
+  ) {
     if (!file) {
       throw new BadRequestException('No ZIP file provided');
     }
@@ -253,7 +302,10 @@ export class FilesService {
             const buffer = await streamToBuffer(entry.stream());
 
             // ── Security: Magic byte check on content ───────────────────
-            const contentViolations = this.uploadSecurity.validateFileContent(entryPath, buffer);
+            const contentViolations = this.uploadSecurity.validateFileContent(
+              entryPath,
+              buffer,
+            );
             if (contentViolations.some((v) => v.severity === 'CRITICAL')) {
               this.logger.warn(`Blocked disguised binary: ${entryPath}`);
               continue;
@@ -284,7 +336,9 @@ export class FilesService {
 
       // Clean up temp file
       if (file.path) {
-        try { fs.unlinkSync(file.path); } catch (_) {}
+        try {
+          fs.unlinkSync(file.path);
+        } catch (_) {}
       }
 
       // ── Secret Scanning ─────────────────────────────────────────────────
@@ -320,7 +374,10 @@ export class FilesService {
         },
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       this.logger.error('Failed to process ZIP file', error);
@@ -383,7 +440,11 @@ export class FilesService {
 
   // ─── File Upload (with security scanning) ─────────────────────────────────
 
-  async uploadFiles(projectId: string, files: Express.Multer.File[], userId: string) {
+  async uploadFiles(
+    projectId: string,
+    files: Express.Multer.File[],
+    userId: string,
+  ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }
@@ -398,7 +459,9 @@ export class FilesService {
       // ── Security: Validate each file ──────────────────────────────────
       const violations = this.uploadSecurity.validateUploadedFile(file);
       if (violations.some((v) => v.severity === 'CRITICAL')) {
-        this.logger.warn(`Blocked file: ${file.originalname} — ${violations[0].message}`);
+        this.logger.warn(
+          `Blocked file: ${file.originalname} — ${violations[0].message}`,
+        );
         continue; // Skip this file but continue with others
       }
 
@@ -413,7 +476,9 @@ export class FilesService {
               file.buffer,
             );
             if (contentViolations.some((v) => v.severity === 'CRITICAL')) {
-              this.logger.warn(`Blocked disguised binary: ${file.originalname}`);
+              this.logger.warn(
+                `Blocked disguised binary: ${file.originalname}`,
+              );
               continue;
             }
             content = file.buffer.toString('utf-8');
@@ -442,7 +507,9 @@ export class FilesService {
       });
 
       if (file.path) {
-        try { fs.unlinkSync(file.path); } catch (_) {}
+        try {
+          fs.unlinkSync(file.path);
+        } catch (_) {}
       }
 
       createdFiles.push(dbFile);
@@ -479,18 +546,35 @@ export class FilesService {
 
   // ─── File Tree (IDOR protected) ───────────────────────────────────────────
 
-  async getFileTree(projectId: string, userId: string): Promise<FileTreeNode[]> {
+  async getFileTree(
+    projectId: string,
+    userId: string,
+  ): Promise<FileTreeNode[]> {
     // IDOR: Verify project ownership
     await this.verifyProjectOwnership(projectId, userId);
 
     const rootFiles = await this.prisma.file.findMany({
       where: { projectId, parentId: null },
       orderBy: [{ isFolder: 'desc' }, { name: 'asc' }],
-      select: { id: true, name: true, path: true, isFolder: true, size: true, mimeType: true },
+      select: {
+        id: true,
+        name: true,
+        path: true,
+        isFolder: true,
+        size: true,
+        mimeType: true,
+      },
     });
 
     const buildTree = async (
-      files: { id: string; name: string; path: string; isFolder: boolean; size: number; mimeType: string }[],
+      files: {
+        id: string;
+        name: string;
+        path: string;
+        isFolder: boolean;
+        size: number;
+        mimeType: string;
+      }[],
     ): Promise<FileTreeNode[]> => {
       const result: FileTreeNode[] = [];
       for (const f of files) {
@@ -506,7 +590,14 @@ export class FilesService {
           const children = await this.prisma.file.findMany({
             where: { parentId: f.id },
             orderBy: [{ isFolder: 'desc' }, { name: 'asc' }],
-            select: { id: true, name: true, path: true, isFolder: true, size: true, mimeType: true },
+            select: {
+              id: true,
+              name: true,
+              path: true,
+              isFolder: true,
+              size: true,
+              mimeType: true,
+            },
           });
           node.children = await buildTree(children);
         }

@@ -24,18 +24,18 @@ import { CommonModule } from './common/common.module';
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60000,    // 60 seconds
-        limit: 100,    // 100 requests
+        ttl: 60000, // 60 seconds
+        limit: 100, // 100 requests
       },
       {
         name: 'strict',
-        ttl: 60000,    // 60 seconds
-        limit: 10,     // 10 requests (for AI endpoints)
+        ttl: 60000, // 60 seconds
+        limit: 10, // 10 requests (for AI endpoints)
       },
       {
         name: 'auth',
-        ttl: 60000,    // 60 seconds
-        limit: 5,      // 5 attempts (brute force protection)
+        ttl: 60000, // 60 seconds
+        limit: 5, // 5 attempts (brute force protection)
       },
     ]),
 

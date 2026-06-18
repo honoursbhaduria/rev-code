@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
-import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from '@langchain/core/prompts';
+import {
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+  HumanMessagePromptTemplate,
+} from '@langchain/core/prompts';
 import { StructuredOutputParser } from '@langchain/core/output_parsers';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { z } from 'zod';
@@ -10,10 +14,16 @@ import { z } from 'zod';
 const IssueSchema = z.object({
   title: z.string().describe('Short descriptive title of the issue'),
   description: z.string().describe('Detailed explanation of the problem'),
-  severity: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).describe('Issue severity level'),
+  severity: z
+    .enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'])
+    .describe('Issue severity level'),
   category: z.string().describe('Category of the issue'),
   line: z.number().nullable().optional().describe('Line number if applicable'),
-  filePath: z.string().nullable().optional().describe('File path where issue was found'),
+  filePath: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('File path where issue was found'),
   recommendation: z.string().describe('Specific actionable fix advice'),
 });
 
@@ -95,11 +105,14 @@ export class LangChainService {
   /**
    * Create a ChatOpenAI instance for any OpenAI-compatible provider
    */
-  createModel(provider: {
-    baseUrl: string;
-    apiKey?: string | null;
-    model: string;
-  }, options?: { temperature?: number; maxTokens?: number }): ChatOpenAI {
+  createModel(
+    provider: {
+      baseUrl: string;
+      apiKey?: string | null;
+      model: string;
+    },
+    options?: { temperature?: number; maxTokens?: number },
+  ): ChatOpenAI {
     return new ChatOpenAI({
       openAIApiKey: provider.apiKey || 'no-key',
       modelName: provider.model,
@@ -119,9 +132,13 @@ export class LangChainService {
     fileContext: string,
     reviewMode: string,
   ): Promise<ReviewResult> {
-    const model = this.createModel(provider, { temperature: 0.2, maxTokens: 8192 });
+    const model = this.createModel(provider, {
+      temperature: 0.2,
+      maxTokens: 8192,
+    });
 
-    const modePrompt = REVIEW_MODE_PROMPTS[reviewMode] || REVIEW_MODE_PROMPTS['QUALITY'];
+    const modePrompt =
+      REVIEW_MODE_PROMPTS[reviewMode] || REVIEW_MODE_PROMPTS['QUALITY'];
 
     // Create structured output parser from Zod schema
     const parser = StructuredOutputParser.fromZodSchema(ReviewResultSchema);
@@ -137,10 +154,10 @@ Severity guidelines:
 - CRITICAL: Must fix immediately, security breach or data loss risk
 - HIGH: Should fix soon, significant impact on security/performance/quality
 - MEDIUM: Should fix in next sprint, moderate impact
-- LOW: Nice to have fix, minor improvement`
+- LOW: Nice to have fix, minor improvement`,
       ),
       HumanMessagePromptTemplate.fromTemplate(
-        'Please review the following code files:\n\n{code_context}'
+        'Please review the following code files:\n\n{code_context}',
       ),
     ]);
 
@@ -150,7 +167,8 @@ Severity guidelines:
       model,
       // Custom parser that handles markdown-wrapped JSON gracefully
       async (response) => {
-        const content = typeof response === 'string' ? response : response.content;
+        const content =
+          typeof response === 'string' ? response : response.content;
         const text = typeof content === 'string' ? content : String(content);
         try {
           return await parser.parse(text);
@@ -166,7 +184,7 @@ Severity guidelines:
         format_instructions: formatInstructions,
         code_context: fileContext,
       });
-      return result as ReviewResult;
+      return result;
     } catch (error) {
       this.logger.error(`LangChain review failed: ${error.message}`);
       throw error;
@@ -182,21 +200,24 @@ Severity guidelines:
     chatHistory: { role: 'user' | 'assistant'; content: string }[],
     userMessage: string,
   ): Promise<string> {
-    const model = this.createModel(provider, { temperature: 0.5, maxTokens: 4096 });
+    const model = this.createModel(provider, {
+      temperature: 0.5,
+      maxTokens: 4096,
+    });
 
     // Build messages array for the model
     const messages: [string, string][] = [
       ['system', systemPrompt],
-      ...chatHistory.map((m): [string, string] => [m.role === 'user' ? 'human' : 'ai', m.content]),
+      ...chatHistory.map((m): [string, string] => [
+        m.role === 'user' ? 'human' : 'ai',
+        m.content,
+      ]),
       ['human', userMessage],
     ];
 
     const prompt = ChatPromptTemplate.fromMessages(messages);
 
-    const chain = RunnableSequence.from([
-      prompt,
-      model,
-    ]);
+    const chain = RunnableSequence.from([prompt, model]);
 
     try {
       const response = await chain.invoke({});
@@ -220,7 +241,8 @@ Severity guidelines:
     const model = this.createModel(provider, options);
 
     const langchainMessages: [string, string][] = messages.map((m) => {
-      const role = m.role === 'system' ? 'system' : m.role === 'user' ? 'human' : 'ai';
+      const role =
+        m.role === 'system' ? 'system' : m.role === 'user' ? 'human' : 'ai';
       return [role, m.content];
     });
 
@@ -258,22 +280,27 @@ Severity guidelines:
           if (parsed.summary && Array.isArray(parsed.issues)) {
             return parsed as ReviewResult;
           }
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     }
 
     // Return safe fallback
     return {
-      summary: 'AI review completed. The response could not be fully parsed into structured format.',
-      issues: [{
-        title: 'Raw AI Review Output',
-        description: text.substring(0, 2000),
-        severity: 'MEDIUM',
-        category: 'General',
-        line: null,
-        filePath: null,
-        recommendation: 'Please review the raw AI output above.',
-      }],
+      summary:
+        'AI review completed. The response could not be fully parsed into structured format.',
+      issues: [
+        {
+          title: 'Raw AI Review Output',
+          description: text.substring(0, 2000),
+          severity: 'MEDIUM',
+          category: 'General',
+          line: null,
+          filePath: null,
+          recommendation: 'Please review the raw AI output above.',
+        },
+      ],
     };
   }
 }

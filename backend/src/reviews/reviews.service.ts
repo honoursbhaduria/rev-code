@@ -68,22 +68,27 @@ export class ReviewsService {
         },
       },
       include: {
-        files: { include: { file: { select: { id: true, name: true, path: true } } } },
+        files: {
+          include: { file: { select: { id: true, name: true, path: true } } },
+        },
       },
     });
 
     // Run AI review asynchronously using LangChain
-    this.runReview(review.id, files, dto.reviewMode.toUpperCase(), provider).catch(
-      (err) => {
-        this.logger.error(`Review ${review.id} failed: ${err.message}`);
-        this.prisma.review
-          .update({
-            where: { id: review.id },
-            data: { status: 'FAILED' },
-          })
-          .catch(() => {});
-      },
-    );
+    this.runReview(
+      review.id,
+      files,
+      dto.reviewMode.toUpperCase(),
+      provider,
+    ).catch((err) => {
+      this.logger.error(`Review ${review.id} failed: ${err.message}`);
+      this.prisma.review
+        .update({
+          where: { id: review.id },
+          data: { status: 'FAILED' },
+        })
+        .catch(() => {});
+    });
 
     return {
       ...review,
@@ -149,7 +154,9 @@ export class ReviewsService {
           create: result.issues.map((issue) => ({
             title: String(issue.title || 'Untitled Issue'),
             description: String(issue.description || ''),
-            severity: validSeverities.includes(String(issue.severity).toUpperCase())
+            severity: validSeverities.includes(
+              String(issue.severity).toUpperCase(),
+            )
               ? (String(issue.severity).toUpperCase() as any)
               : 'MEDIUM',
             category: String(issue.category || 'General'),

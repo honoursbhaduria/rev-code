@@ -17,12 +17,14 @@ const SECRET_PATTERNS: SecretPattern[] = [
     category: 'AWS',
     regex: /\bAKIA[0-9A-Z]{16}\b/g,
     severity: 'CRITICAL',
-    description: 'AWS Access Key ID found. This can grant full access to AWS services.',
+    description:
+      'AWS Access Key ID found. This can grant full access to AWS services.',
   },
   {
     name: 'AWS Secret Access Key',
     category: 'AWS',
-    regex: /(?:aws_secret_access_key|aws_secret_key)\s*[=:]\s*['"]?([A-Za-z0-9/+=]{40})['"]?/gi,
+    regex:
+      /(?:aws_secret_access_key|aws_secret_key)\s*[=:]\s*['"]?([A-Za-z0-9/+=]{40})['"]?/gi,
     severity: 'CRITICAL',
     description: 'AWS Secret Access Key found.',
   },
@@ -132,7 +134,8 @@ const SECRET_PATTERNS: SecretPattern[] = [
   {
     name: 'Slack Webhook',
     category: 'Slack',
-    regex: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/g,
+    regex:
+      /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/g,
     severity: 'HIGH',
     description: 'Slack Webhook URL found.',
   },
@@ -217,7 +220,8 @@ const SECRET_PATTERNS: SecretPattern[] = [
   {
     name: 'JWT Token',
     category: 'Token',
-    regex: /\beyJ[A-Za-z0-9-_]{15,}\.eyJ[A-Za-z0-9-_]{15,}\.[A-Za-z0-9-_]{15,}\b/g,
+    regex:
+      /\beyJ[A-Za-z0-9-_]{15,}\.eyJ[A-Za-z0-9-_]{15,}\.[A-Za-z0-9-_]{15,}\b/g,
     severity: 'HIGH',
     description: 'JWT token found. This may grant access to services.',
   },
@@ -233,21 +237,22 @@ const SECRET_PATTERNS: SecretPattern[] = [
   {
     name: 'Hardcoded API Key',
     category: 'Generic',
-    regex: /(?:api[_-]?key|apikey)\s*[=:]\s*['"][A-Za-z0-9_\-]{16,}['"]/gi,
+    regex: /(?:api[_-]?key|apikey)\s*[=:]\s*['"][A-Za-z0-9_-]{16,}['"]/gi,
     severity: 'HIGH',
     description: 'Hardcoded API key found.',
   },
   {
     name: 'Hardcoded Secret',
     category: 'Generic',
-    regex: /(?:secret|secret[_-]?key)\s*[=:]\s*['"][A-Za-z0-9_\-]{16,}['"]/gi,
+    regex: /(?:secret|secret[_-]?key)\s*[=:]\s*['"][A-Za-z0-9_-]{16,}['"]/gi,
     severity: 'HIGH',
     description: 'Hardcoded secret found.',
   },
   {
     name: 'Hardcoded Token',
     category: 'Generic',
-    regex: /(?:access[_-]?token|auth[_-]?token)\s*[=:]\s*['"][A-Za-z0-9_\-]{16,}['"]/gi,
+    regex:
+      /(?:access[_-]?token|auth[_-]?token)\s*[=:]\s*['"][A-Za-z0-9_-]{16,}['"]/gi,
     severity: 'HIGH',
     description: 'Hardcoded access/auth token found.',
   },
@@ -281,7 +286,8 @@ const SECRET_PATTERNS: SecretPattern[] = [
   {
     name: 'Heroku API Key',
     category: 'Heroku',
-    regex: /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g,
+    regex:
+      /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g,
     severity: 'MEDIUM',
     description: 'Possible Heroku API Key (UUID format) found.',
   },
@@ -296,7 +302,7 @@ export interface SecretFinding {
   description: string;
   filePath: string;
   lineNumber: number;
-  matchPreview: string;  // redacted preview showing context
+  matchPreview: string; // redacted preview showing context
 }
 
 export interface ScanResult {
@@ -318,9 +324,7 @@ export class SecretScannerService {
   /**
    * Scan multiple files for secrets
    */
-  scanFiles(
-    files: { path: string; content: string | null }[],
-  ): ScanResult {
+  scanFiles(files: { path: string; content: string | null }[]): ScanResult {
     const startTime = Date.now();
     const allFindings: SecretFinding[] = [];
 
@@ -333,7 +337,8 @@ export class SecretScannerService {
     return {
       totalFiles: files.length,
       totalFindings: allFindings.length,
-      criticalCount: allFindings.filter((f) => f.severity === 'CRITICAL').length,
+      criticalCount: allFindings.filter((f) => f.severity === 'CRITICAL')
+        .length,
       highCount: allFindings.filter((f) => f.severity === 'HIGH').length,
       mediumCount: allFindings.filter((f) => f.severity === 'MEDIUM').length,
       findings: allFindings,
@@ -411,9 +416,22 @@ export class SecretScannerService {
   private isLikelyPlaceholder(match: string, line: string): boolean {
     const lower = line.toLowerCase();
     const placeholderHints = [
-      'example', 'placeholder', 'your-', 'your_', 'xxx', 'test',
-      'dummy', 'sample', 'changeme', 'replace', 'todo', 'fixme',
-      '// ', '/* ', '# ', '<!-- ',  // Comments
+      'example',
+      'placeholder',
+      'your-',
+      'your_',
+      'xxx',
+      'test',
+      'dummy',
+      'sample',
+      'changeme',
+      'replace',
+      'todo',
+      'fixme',
+      '// ',
+      '/* ',
+      '# ',
+      '<!-- ', // Comments
     ];
     return placeholderHints.some((hint) => lower.includes(hint));
   }
@@ -426,7 +444,10 @@ export class SecretScannerService {
     matchIndex: number,
     matchLength: number,
   ): string {
-    const contextBefore = line.substring(Math.max(0, matchIndex - 20), matchIndex);
+    const contextBefore = line.substring(
+      Math.max(0, matchIndex - 20),
+      matchIndex,
+    );
     const matched = line.substring(matchIndex, matchIndex + matchLength);
     const contextAfter = line.substring(
       matchIndex + matchLength,
@@ -436,7 +457,10 @@ export class SecretScannerService {
     // Redact the matched secret, showing only first 4 and last 4 chars
     let redacted: string;
     if (matched.length > 12) {
-      redacted = matched.substring(0, 4) + '****' + matched.substring(matched.length - 4);
+      redacted =
+        matched.substring(0, 4) +
+        '****' +
+        matched.substring(matched.length - 4);
     } else {
       redacted = matched.substring(0, 2) + '****';
     }

@@ -116,9 +116,12 @@ export class AiProvidersService {
     }
 
     // ── Security: Encrypt new API key if provided ───────────────────────
-    const encryptedKey = dto.apiKey !== undefined
-      ? (dto.apiKey ? this.encryption.encrypt(dto.apiKey) : dto.apiKey)
-      : undefined;
+    const encryptedKey =
+      dto.apiKey !== undefined
+        ? dto.apiKey
+          ? this.encryption.encrypt(dto.apiKey)
+          : dto.apiKey
+        : undefined;
 
     return this.prisma.aiProvider.update({
       where: { id },
@@ -182,7 +185,9 @@ export class AiProvidersService {
     });
 
     if (!provider) {
-      throw new NotFoundException(`AI Provider with ID ${providerId} not found`);
+      throw new NotFoundException(
+        `AI Provider with ID ${providerId} not found`,
+      );
     }
 
     return this.decryptProviderKey(provider);
@@ -206,9 +211,7 @@ export class AiProvidersService {
       };
     } catch (error) {
       this.logger.error(`AI provider test failed: ${error.message}`);
-      throw new BadRequestException(
-        `Connection test failed: ${error.message}`,
-      );
+      throw new BadRequestException(`Connection test failed: ${error.message}`);
     }
   }
 
@@ -239,7 +242,9 @@ export class AiProvidersService {
         provider.apiKey = this.encryption.decrypt(provider.apiKey);
       } catch {
         // If decryption fails, the key might be stored in plaintext (legacy)
-        this.logger.warn(`Could not decrypt API key for provider ${provider.id} — using as-is`);
+        this.logger.warn(
+          `Could not decrypt API key for provider ${provider.id} — using as-is`,
+        );
       }
     }
     return provider;

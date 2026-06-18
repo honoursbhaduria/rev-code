@@ -1,41 +1,120 @@
-import {
-  Injectable,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 
 // ─── Dangerous Extensions ──────────────────────────────────────────────────────
 
 const BLOCKED_EXTENSIONS = new Set([
   // Executables
-  '.exe', '.dll', '.so', '.dylib', '.bin', '.com', '.msi', '.scr', '.pif',
+  '.exe',
+  '.dll',
+  '.so',
+  '.dylib',
+  '.bin',
+  '.com',
+  '.msi',
+  '.scr',
+  '.pif',
   // Scripts that execute on servers
-  '.php', '.asp', '.aspx', '.jsp', '.cgi', '.pl', '.war', '.ear',
+  '.php',
+  '.asp',
+  '.aspx',
+  '.jsp',
+  '.cgi',
+  '.pl',
+  '.war',
+  '.ear',
   // Windows scripts
-  '.bat', '.cmd', '.vbs', '.vbe', '.ws', '.wsf', '.wsc', '.wsh',
+  '.bat',
+  '.cmd',
+  '.vbs',
+  '.vbe',
+  '.ws',
+  '.wsf',
+  '.wsc',
+  '.wsh',
   // PowerShell
-  '.ps1', '.ps1xml', '.psc1', '.psd1', '.psm1',
+  '.ps1',
+  '.ps1xml',
+  '.psc1',
+  '.psd1',
+  '.psm1',
   // Other dangerous
-  '.app', '.action', '.command', '.workflow', '.reg', '.inf', '.hta',
+  '.app',
+  '.action',
+  '.command',
+  '.workflow',
+  '.reg',
+  '.inf',
+  '.hta',
   // Archive bombs (nested)
-  '.tar.gz', '.tgz', '.tar.bz2',
+  '.tar.gz',
+  '.tgz',
+  '.tar.bz2',
 ]);
 
 const ALLOWED_TEXT_EXTENSIONS = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-  '.py', '.rb', '.go', '.rs', '.java', '.kt', '.swift', '.cs',
-  '.c', '.cpp', '.h', '.hpp', '.cc',
-  '.html', '.htm', '.xml', '.svg',
-  '.css', '.scss', '.sass', '.less',
-  '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf',
-  '.md', '.mdx', '.txt', '.rst', '.adoc',
-  '.sh', '.bash', '.zsh', '.fish',
-  '.sql', '.graphql', '.gql',
-  '.lua', '.r', '.dart', '.ex', '.exs',
-  '.vue', '.svelte',
-  '.env', '.env.example', '.env.local',
-  '.gitignore', '.dockerignore', '.editorconfig',
-  '.prisma', '.proto', '.tf', '.hcl',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.py',
+  '.rb',
+  '.go',
+  '.rs',
+  '.java',
+  '.kt',
+  '.swift',
+  '.cs',
+  '.c',
+  '.cpp',
+  '.h',
+  '.hpp',
+  '.cc',
+  '.html',
+  '.htm',
+  '.xml',
+  '.svg',
+  '.css',
+  '.scss',
+  '.sass',
+  '.less',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.ini',
+  '.cfg',
+  '.conf',
+  '.md',
+  '.mdx',
+  '.txt',
+  '.rst',
+  '.adoc',
+  '.sh',
+  '.bash',
+  '.zsh',
+  '.fish',
+  '.sql',
+  '.graphql',
+  '.gql',
+  '.lua',
+  '.r',
+  '.dart',
+  '.ex',
+  '.exs',
+  '.vue',
+  '.svelte',
+  '.env',
+  '.env.example',
+  '.env.local',
+  '.gitignore',
+  '.dockerignore',
+  '.editorconfig',
+  '.prisma',
+  '.proto',
+  '.tf',
+  '.hcl',
 ]);
 
 // ─── Magic Bytes for known dangerous file types ────────────────────────────────
@@ -63,19 +142,19 @@ const MALICIOUS_CONTENT_PATTERNS = [
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
 export interface UploadSecurityConfig {
-  maxDecompressedSize: number;    // Max total decompressed size in bytes
-  maxCompressionRatio: number;    // Max compression ratio (decompressed/compressed)
-  maxFileCount: number;           // Max number of files in ZIP
-  maxSingleFileSize: number;      // Max size per individual file
-  maxFilenameLength: number;      // Max filename length
-  blockExecutables: boolean;      // Whether to block executable files
+  maxDecompressedSize: number; // Max total decompressed size in bytes
+  maxCompressionRatio: number; // Max compression ratio (decompressed/compressed)
+  maxFileCount: number; // Max number of files in ZIP
+  maxSingleFileSize: number; // Max size per individual file
+  maxFilenameLength: number; // Max filename length
+  blockExecutables: boolean; // Whether to block executable files
 }
 
 const DEFAULT_CONFIG: UploadSecurityConfig = {
-  maxDecompressedSize: 100 * 1024 * 1024,  // 100MB
-  maxCompressionRatio: 100,                 // 100:1 ratio
+  maxDecompressedSize: 100 * 1024 * 1024, // 100MB
+  maxCompressionRatio: 100, // 100:1 ratio
   maxFileCount: 5000,
-  maxSingleFileSize: 5 * 1024 * 1024,      // 5MB per file
+  maxSingleFileSize: 5 * 1024 * 1024, // 5MB per file
   maxFilenameLength: 255,
   blockExecutables: true,
 };
@@ -83,7 +162,15 @@ const DEFAULT_CONFIG: UploadSecurityConfig = {
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SecurityViolation {
-  type: 'ZIP_BOMB' | 'PATH_TRAVERSAL' | 'BLOCKED_EXTENSION' | 'MAGIC_BYTE' | 'MALICIOUS_CONTENT' | 'FILENAME' | 'SIZE_LIMIT' | 'SYMLINK';
+  type:
+    | 'ZIP_BOMB'
+    | 'PATH_TRAVERSAL'
+    | 'BLOCKED_EXTENSION'
+    | 'MAGIC_BYTE'
+    | 'MALICIOUS_CONTENT'
+    | 'FILENAME'
+    | 'SIZE_LIMIT'
+    | 'SYMLINK';
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
   message: string;
   filePath?: string;
@@ -111,7 +198,12 @@ export class UploadSecurityService {
    * Validate a ZIP file before extraction
    */
   validateZipEntries(
-    entries: { path: string; compressedSize: number; uncompressedSize?: number; type: string }[],
+    entries: {
+      path: string;
+      compressedSize: number;
+      uncompressedSize?: number;
+      type: string;
+    }[],
     compressedSize: number,
   ): UploadSecurityResult {
     const violations: SecurityViolation[] = [];
@@ -264,7 +356,10 @@ export class UploadSecurityService {
     const violations: SecurityViolation[] = [];
 
     // Extension check
-    if (this.config.blockExecutables && this.isBlockedExtension(file.originalname)) {
+    if (
+      this.config.blockExecutables &&
+      this.isBlockedExtension(file.originalname)
+    ) {
       violations.push({
         type: 'BLOCKED_EXTENSION',
         severity: 'HIGH',
@@ -304,7 +399,9 @@ export class UploadSecurityService {
 
     // Magic byte check
     if (file.buffer) {
-      violations.push(...this.validateFileContent(file.originalname, file.buffer));
+      violations.push(
+        ...this.validateFileContent(file.originalname, file.buffer),
+      );
     }
 
     return violations;
@@ -315,13 +412,13 @@ export class UploadSecurityService {
    */
   sanitizePath(filePath: string): string {
     return filePath
-      .replace(/\\/g, '/')           // normalize separators
-      .replace(/\.\.\//g, '')        // remove ../
-      .replace(/^\/+/, '')           // remove leading /
-      .replace(/\0/g, '')            // remove null bytes
-      .replace(/%00/g, '')           // remove encoded null bytes
-      .replace(/%2e%2e%2f/gi, '')    // remove encoded ../
-      .replace(/%2e%2e\//gi, '')     // remove mixed encoded ../
+      .replace(/\\/g, '/') // normalize separators
+      .replace(/\.\.\//g, '') // remove ../
+      .replace(/^\/+/, '') // remove leading /
+      .replace(/\0/g, '') // remove null bytes
+      .replace(/%00/g, '') // remove encoded null bytes
+      .replace(/%2e%2e%2f/gi, '') // remove encoded ../
+      .replace(/%2e%2e\//gi, '') // remove mixed encoded ../
       .trim();
   }
 
@@ -336,7 +433,7 @@ export class UploadSecurityService {
       normalized.includes('%2e%2e') ||
       normalized.includes('..%2f') ||
       normalized.includes('..%5c') ||
-      /^[a-zA-Z]:[/\\]/.test(normalized)  // Windows absolute path
+      /^[a-zA-Z]:[/\\]/.test(normalized) // Windows absolute path
     );
   }
 

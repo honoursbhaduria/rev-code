@@ -43,10 +43,7 @@ export class ChatController {
   }
 
   @Get('sessions/:id')
-  async getSession(
-    @Request() req: RequestWithUser,
-    @Param('id') id: string,
-  ) {
+  async getSession(@Request() req: RequestWithUser, @Param('id') id: string) {
     return this.chatService.getSession(req.user.id, id);
   }
 
@@ -71,10 +68,7 @@ export class ChatController {
   }
 
   @Get('sessions/:id/messages')
-  async getMessages(
-    @Request() req: RequestWithUser,
-    @Param('id') id: string,
-  ) {
+  async getMessages(@Request() req: RequestWithUser, @Param('id') id: string) {
     return this.chatService.getMessages(req.user.id, id);
   }
 }

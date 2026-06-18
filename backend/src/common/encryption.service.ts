@@ -25,14 +25,15 @@ export class EncryptionService {
       }
     } else {
       // Generate a deterministic key from JWT_SECRET as fallback
-      const fallbackSecret = process.env.JWT_SECRET || 'recode-default-encryption-key';
+      const fallbackSecret =
+        process.env.JWT_SECRET || 'recode-default-encryption-key';
       this.encryptionKey = crypto
         .createHash('sha256')
         .update(fallbackSecret)
         .digest();
       this.logger.warn(
         'ENCRYPTION_KEY not set in .env — using derived key from JWT_SECRET. ' +
-        'Set ENCRYPTION_KEY to a 64-character hex string for production.',
+          'Set ENCRYPTION_KEY to a 64-character hex string for production.',
       );
     }
   }
@@ -80,7 +81,11 @@ export class EncryptionService {
       const authTag = data.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
       const encrypted = data.subarray(IV_LENGTH + TAG_LENGTH);
 
-      const decipher = crypto.createDecipheriv(ALGORITHM, this.encryptionKey, iv);
+      const decipher = crypto.createDecipheriv(
+        ALGORITHM,
+        this.encryptionKey,
+        iv,
+      );
       decipher.setAuthTag(authTag);
 
       let decrypted = decipher.update(encrypted);

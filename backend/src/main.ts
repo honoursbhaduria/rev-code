@@ -33,18 +33,18 @@ async function bootstrap() {
         preload: true,
       },
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-      noSniff: true,            // X-Content-Type-Options: nosniff
-      xssFilter: true,          // X-XSS-Protection
-      hidePoweredBy: true,      // Remove X-Powered-By header
-      frameguard: { action: 'deny' },  // X-Frame-Options: DENY (clickjacking)
+      noSniff: true, // X-Content-Type-Options: nosniff
+      xssFilter: true, // X-XSS-Protection
+      hidePoweredBy: true, // Remove X-Powered-By header
+      frameguard: { action: 'deny' }, // X-Frame-Options: DENY (clickjacking)
     }),
   );
 
   // ─── Security: Global Validation Pipe ─────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,             // Strip properties not in DTO
-      forbidNonWhitelisted: true,  // Reject requests with unknown properties
+      whitelist: true, // Strip properties not in DTO
+      forbidNonWhitelisted: true, // Reject requests with unknown properties
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,

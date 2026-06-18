@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiProvidersService } from '../ai/ai-providers.service';
 import { LangChainService } from '../ai/langchain.service';
@@ -84,11 +80,7 @@ export class ChatService {
     return { message: 'Chat session deleted successfully' };
   }
 
-  async sendMessage(
-    userId: string,
-    sessionId: string,
-    dto: SendMessageDto,
-  ) {
+  async sendMessage(userId: string, sessionId: string, dto: SendMessageDto) {
     // Verify session ownership
     const session = await this.prisma.chatSession.findFirst({
       where: { id: sessionId, userId },
@@ -228,9 +220,7 @@ Guidelines:
     });
   }
 
-  private buildFileContext(
-    files: { path: string; content: string }[],
-  ): string {
+  private buildFileContext(files: { path: string; content: string }[]): string {
     const MAX_CONTEXT_CHARS = 80000; // ~20k tokens
     let context = '';
     let totalChars = 0;
